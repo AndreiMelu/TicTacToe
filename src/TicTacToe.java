@@ -1,147 +1,141 @@
+import org.apache.commons.lang.StringUtils;
 import java.util.Arrays;
 import java.util.Scanner;
-import java.util.stream.IntStream;
-import static java.util.stream.Collectors.joining;
 
 public class TicTacToe {
 
-    private static final char[][] board = newBoard(3);
-
-    private static final String[] PLAYER_NAMES = {"Player1", "Player2"};
-    private static final char[] PLAYER_MARKS = {'X', 'O'};
-    private static final char EMPTY_MARK = ' ';
+    static Scanner in;
+    static String[] board;
+    static String turn;
+    static String firstName;
+    static String secondName;
 
     public static void main(String[] args) {
+        in = new Scanner(System.in);
+        board = new String[9];
+        turn = "X";
+        String winner = null;
+        populateEmptyBoard();
 
-        System.out.println("Players win by having 3 marks in a row.\n");
+        System.out.println("Welcome to 2 Players TicTacToe.");
+        System.out.println("--------------------------------");
+        getNames();
 
-        displayBoard();
+        printBoard();
+        System.out.println(firstName + " will play first. Enter a slot number to place X in:");
 
-        int crtPlayer = 0;
-        while (true) {
-
-            playMove(PLAYER_NAMES[crtPlayer], PLAYER_MARKS[crtPlayer]);
-
-            int winner = detectWinner();
-            if (winner != -1) {
-                displayWinnerName(winner);
-                break; //game ended
-            }
-
-            crtPlayer = (crtPlayer + 1) % 2;
-        }
-    }
-
-    private static char[][] newBoard(int size) {
-        char[][] board = new char[size][size];
-        for (char[] row : board) {
-            Arrays.fill(row, EMPTY_MARK);
-        }
-        return board;
-    }
-
-    private static void displayBoard() {
-        displayHeaderRow(board.length);
-
-        char rowLabel = 'A';
-        for (char[] row : board) {
-            System.out.print(rowLabel + " ");
-            for (char cell : row) {
-                System.out.print(cell + " ");
-            }
-            System.out.println();
-            rowLabel++;
-        }
-    }
-
-    private static void displayHeaderRow(int cellCount) {
-        System.out.println("  " +
-                IntStream.rangeClosed(1, cellCount)
-                        .mapToObj(i -> i + " ")
-                        .collect(joining()));
-    }
-
-    private static void playMove(String name, char mark) {
-        while (true) {
-
-            System.out.println("\n" + name + "'s move (" + mark + "): \nPlease enter row and a column(Ex: \"A1\") ");
-            String userInput = new Scanner(System.in).next().trim().toUpperCase();
-            int row = userInput.charAt(0) - 'A';
-            int col = userInput.charAt(1) - '1';
-
-            if (board[row][col] == EMPTY_MARK) {
-                board[row][col] = mark;
-                displayBoard();
-                break;
-            }
-
-            System.err.println("Move is invalid (cell not empty), please retry!");
-        }
-    }
-
-
-    /**
-     * Checks the board for end conditions, returns:
-     * 0/1 - if game ended due to player 0/1 winning
-     * 2   - if game ended but with no winner (board is full)
-     * -1  - if game is not finished yet
-     */
-    private static int detectWinner() {
-        for (int row = 0; row < 3; row++) {
-            int winner = winnerOfLine(board[row][0], board[0][1], board[0][2]);
-            if (winner != -1) {
-                return winner;
-            }
-        }
-        for (int col = 0; col < 3; col++) {
-            int winner = winnerOfLine(board[0][col], board[1][col], board[2][col]);
-            if (winner != -1) {
-                return winner;
-            }
-        }
-        int winner = winnerOfLine(board[0][0], board[1][1], board[2][2]);
-        if (winner != -1) {
-            return winner;
-        }
-        winner = winnerOfLine(board[0][2], board[1][1], board[2][0]);
-        if (winner != -1) {
-            return winner;
-        }
-
-        if (!boardHasEmptyCells()) {
-            return 2; //tie
-        }
-
-        return -1; //no winner yet, game still playing
-    }
-
-    private static boolean boardHasEmptyCells() {
-        for (char[] row : board) {
-            for (char cell : row) {
-                if (cell == EMPTY_MARK) {
-                    return true;
+        while (winner == null) {
+            String numInput;
+            numInput = in.next();
+            if (StringUtils.isNumeric(numInput)) {
+                if (!(Integer.parseInt(numInput) > 0 && Integer.parseInt(numInput) <= 9)) {
+                    System.out.println("Invalid input; re-enter a slot number:");
+                    continue;
                 }
+            } else {
+                System.out.println("Please enter a numeric value!");
+                continue;
+            }
+            if (board[Integer.parseInt(numInput) - 1].equals(numInput)) {
+                board[Integer.parseInt(numInput) - 1] = turn;
+                if (turn.equals("X")) {
+                    turn = "O";
+                } else {
+                    turn = "X";
+                }
+                printBoard();
+                winner = checkWinner();
+            } else {
+                System.out.println("Slot already taken; re-enter slot number:");
             }
         }
-        return false;
-    }
-
-    /**
-     * Returns the index of the winner of this line (0/1), or -1 if the line is not complete
-     */
-    private static int winnerOfLine(int mark1, int mark2, int mark3) {
-        if (mark1 != EMPTY_MARK && mark1 == mark2 && mark2 == mark3) {
-            return mark1 == PLAYER_MARKS[0] ? 0 : 1;
-        }
-        return -1;
-    }
-
-    private static void displayWinnerName(int winner) {
-        if (winner == 0 || winner == 1) {
-            System.out.println("Game ended, WINNER: " + PLAYER_NAMES[winner] + "(" + PLAYER_MARKS[winner] + ") !");
+        if (winner.equalsIgnoreCase("draw")) {
+            System.out.println("It's a draw! Thanks for playing.");
         } else {
-            System.out.println("Game ended with NO WINNER (table full)");
+            String player = winner.equals("X") ? firstName : secondName;
+            System.out.println("Congratulations! " + player + " (" + winner + ") have won! Thanks for playing.");
         }
+        in.close();
+    }
+
+    static String checkWinner() {
+        for (int a = 0; a < 8; a++) {
+            String line = null;
+            switch (a) {
+                case 0:
+                    line = board[0] + board[1] + board[2];
+                    break;
+                case 1:
+                    line = board[3] + board[4] + board[5];
+                    break;
+                case 2:
+                    line = board[6] + board[7] + board[8];
+                    break;
+                case 3:
+                    line = board[0] + board[3] + board[6];
+                    break;
+                case 4:
+                    line = board[1] + board[4] + board[7];
+                    break;
+                case 5:
+                    line = board[2] + board[5] + board[8];
+                    break;
+                case 6:
+                    line = board[0] + board[4] + board[8];
+                    break;
+                case 7:
+                    line = board[2] + board[4] + board[6];
+                    break;
+            }
+            if (line.equals("XXX")) {
+                return "X";
+            } else if (line.equals("OOO")) {
+                return "O";
+            }
+        }
+
+        for (int a = 0; a < 9; a++) {
+            if (Arrays.asList(board).contains(String.valueOf(a + 1))) {
+                break;
+            } else if (a == 8) return "draw";
+        }
+        String player = turn.equals("X") ? firstName : secondName;
+        System.out.println(player + "'s turn; enter a slot number to place " + turn + " in:");
+        return null;
+    }
+
+    static void printBoard() {
+        System.out.println("                           Available slots:");
+        System.out.println("/---|---|---\\               /---|---|---\\");
+        System.out.println("| " + printCell(board[0]) + " | " + printCell(board[1]) + " | " + printCell(board[2]) + " |"+
+                "               | " + printExample(board[0]) + " | " + printExample(board[1]) + " | " + printExample(board[2]) + " |");
+        System.out.println("|-----------|               |-----------|");
+        System.out.println("| " + printCell(board[3]) + " | " + printCell(board[4]) + " | " + printCell(board[5]) + " |"+
+                "               | " + printExample(board[3]) + " | " + printExample(board[4]) + " | " + printExample(board[5]) + " |");
+        System.out.println("|-----------|               |-----------|");
+        System.out.println("| " + printCell(board[6]) + " | " + printCell(board[7]) + " | " + printCell(board[8]) + " |"+
+                "               | " + printExample(board[6]) + " | " + printExample(board[7]) + " | " + printExample(board[8]) + " |");
+
+        System.out.println("/---|---|---\\               /---|---|---\\");
+    }
+
+    static void populateEmptyBoard() {
+        for (int a = 0; a < 9; a++) {
+            board[a] = String.valueOf(a + 1);
+        }
+    }
+
+    static String printCell(String x) {
+        return StringUtils.isNumeric(x) ? " " : x;
+    }
+    static String printExample(String x){
+        return StringUtils.isNumeric(x)? x :" ";
+    }
+
+    static void getNames() {
+        System.out.println("Please enter first player's name:");
+        firstName = in.nextLine();
+        System.out.println("Please enter second player's name: ");
+        secondName = in.nextLine();
     }
 }
-
